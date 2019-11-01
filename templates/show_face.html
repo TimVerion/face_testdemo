@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>员工列表</title>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <style>
+        .booth {
+            width: 400px;
+            background: #ccc;
+            border: 10px solid #ddd;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+<div class="booth">
+    <table border="1px" id="tab">
+        <tr>
+            <td>编号</td>
+            <td>姓名</td>
+            <td>操作</td>
+        </tr>
+    </table>
+</div>
+</body>
+<script>
+    $.ajax({
+        url: "/api/show_face",
+        method: 'POST',
+        success: function (data) {
+            {#alert(data["results"]);#}
+            var ps = data["results"];
+            var s = "";
+            for (var key in ps) {
+                {#alert(key + ":" + ps[key]);#}
+                s = "<tr><td>" + key + "</td><td>" + ps[key] + "</td><td><a href='/api/del_face?id=" + key + "'>删除</a></td></tr>";
+                $("#tab").append(s);
+            }
+        }
+    })
+</script>
+</html>

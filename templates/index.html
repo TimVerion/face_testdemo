@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>人脸识别</title>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <style>
+        .booth {
+            width: 400px;
+            background: #ccc;
+            border: 10px solid #ddd;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="booth">
+
+    <video id="video" width="400" height="300"></video>
+    <button id='tack'>拍照</button>
+    <canvas id='canvas' width='400' height='300' style="display:none"></canvas>
+    <img id='img' src='' name="img">
+    <img id="img_show" width="400" height="300" src="" style="display:none">
+    <input type="text" id="Recogn">
+    <a href="/show_face"><input type="button" value="所有人"></a>
+    <a href="/add_face" style="float:right"><input type="button" value="增加人脸信息"></a>
+</div>
+<div class="check_face" style="margin-left: 300px;">
+    <button id="bt1">1</button>
+    <button id="bt2">2</button>
+    <button id="bt3">3</button>
+</div>
+<div id="zimu">
+
+</div>
+
+<script>
+    var video = document.getElementById('video'),
+        canvas = document.getElementById('canvas'),
+        snap = document.getElementById('tack'),
+        img = document.getElementById('img'),
+        vendorUrl = window.URL || window.webkitURL;
+
+    //媒体对象
+    navigator.getMedia = navigator.getUserMedia ||
+        navigator.webkitGetUserMedia ||
+        navigator.mozGetUserMedia ||
+        navigator.msGetUserMedia;
+    navigator.getMedia({
+        video: true, //使用摄像头对象
+        audio: false  //不适用音频
+    }, function (strem) {
+        //这个方法要报错：video.src = window.URL.createObjectURL(strem);
+        video.srcObject = strem;
+        video.onloadedmetadata = function (e) {
+            video.play();
+        };
+    }, function (error) {
+        console.log(error);
+    });
+    var index = 1;
+    var names = [];
+
+    function isAllEqual(array) {
+        if (array.length > 0) {
+            return !array.some(function (value, index) {
+                return value !== array[0];
+            });
+        } else {
+            return true;
+        }
+    }
+
+    snap.addEventListener('click', function () {
+        canvas.getContext('2d').drawImage(video, 0, 0, 400, 300);
+        img = canvas.toDataURL('image/jpg')
+        img = img.split(',')[1];
+        img = img.toString()
+        $.ajax({
+            url: '/api/face_recog',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                "base64_11":img,
+            }),
+            success: (data) => {
+                console.log(data["results"]);
+                //$("#img_show").attr("style","")
+                //$("#img_show").attr("src","data:image/jpg;base64,"+data)
+                if (data["results"] == 1) {
+                    $("#Recogn").val("暂无此人信息-->去添加");
+                    $("#tack").css('color', 'blue');
+                } else if (data["results"] == 0) {
+                    $("#Recogn").val('未识别到人脸');
+                    $("#tack").css('color', 'red');
+                } else {
+                    $("#Recogn").val(data["results"]);
+                    $("#tack").css('color', 'green');
+                    console.log("#bt" + index);
+                    console.log(data["results"][0][0]);
+                    $("#bt" + index).css('color', 'red');
+                    names.push(data["results"][0][0]);
+                    index += 1
+                    if (index == 4) {
+                        // 判断所有的人名是不是一样,如果一样则通过,否则重新录入
+                        var is_pass = isAllEqual(names);
+                        if (is_pass) {
+                            var s = "<h1 style='color: yellow'>" + data["results"][0][0] + "刷脸成功!" + "</h1>"
+                            $("#zimu").append(s);
+                        }
+                        names.length = 0
+                        index = 1
+                        $("#bt1").css('color', 'black');
+                        $("#bt2").css('color', 'black');
+                        $("#bt3").css('color', 'black');
+                    }
+
+                }
+            }
+        })
+    })
+
+</script>
+
+</body>
+</html>

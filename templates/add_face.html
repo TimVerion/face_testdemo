@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>添加员工</title>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <style>
+    .booth {
+      width:400px;
+      background:#ccc;
+      border: 10px solid #ddd;
+      margin: 0 auto;
+    }
+    </style>
+</head>
+<body>
+
+    <div class="booth">
+
+    <video id="video" width="400" height="300"></video>
+    <button id='tack' >拍照</button>
+    <canvas id='canvas' width='400' height='300' style="display:none" ></canvas>
+    <img id='img' src='' name="img">
+    <img id="img_show" width="400" height="300" src=""  style="display:none" >
+    请输入姓名：<input type="text" id="Recogn" >
+        <a href="/"><button style="float:right">返回</button></a>
+    </div>
+<script>
+    var video = document.getElementById('video'),
+    canvas = document.getElementById('canvas'),
+    snap = document.getElementById('tack'),
+    img = document.getElementById('img'),
+
+
+    vendorUrl = window.URL || window.webkitURL;
+
+                //媒体对象
+    navigator.getMedia = navigator.getUserMedia ||
+                         navigator.webkitGetUserMedia ||
+                         navigator.mozGetUserMedia ||
+                         navigator.msGetUserMedia;
+    navigator.getMedia({
+    video: true, //使用摄像头对象
+    audio: false  //不适用音频
+    }, function(strem){
+        //这个方法要报错：video.src = window.URL.createObjectURL(strem);
+        video.srcObject = strem;
+        video.onloadedmetadata = function(e) {
+            video.play();
+        };
+    }, function(error) {
+        console.log(error);
+    });
+
+
+    snap.addEventListener('click', function(){
+        canvas.getContext('2d').drawImage(video,0,0,400,300);
+        img=canvas.toDataURL('image/jpg')
+        if ($("#Recogn").val() == ""){
+            alert('名字不能为空')
+            return
+        }
+        img=img.split(',')[1];
+        img = img.toString()
+        $.ajax({
+            url:"/api/add_face",
+            method: 'POST',
+            contentType: 'application/json',
+            data:JSON.stringify({
+                "base64_11":img,
+                "user_name":$("#Recogn").val(),
+            }),
+            success: function (data) {
+                 $("#Recogn").attr("value",'.')
+                 alert(data["results"])
+            }
+        })
+
+ })
+
+</script>
+
+</body>
+</html>
